@@ -27,7 +27,7 @@ export default function App() {
           api.current?.setWord(e.target.value)
         }}
         onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-        className="fixed left-1/2 top-3 z-20 w-48 -translate-x-1/2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-center text-sm text-white placeholder-white/45 outline-none backdrop-blur-md focus:border-white/40 focus:bg-white/20"
+        className="fixed left-1/2 top-3 z-20 w-48 -translate-x-1/2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-center text-base text-white placeholder-white/45 outline-none backdrop-blur-md focus:border-white/40 focus:bg-white/20"
       />
       <Hint text="点击砸玻璃 · 连砸十下整块粉碎" hidden={touched} />
       <MoreMenu current="smash" />
