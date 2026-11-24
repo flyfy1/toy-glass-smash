@@ -35,10 +35,15 @@ const makeCanvas = (w: number, h: number) => {
 export function startGame(canvas: HTMLCanvasElement, onFirst: () => void, initialWords: string[] = []): GameApi {
   let pane = makeCanvas(1, 1)
   let cracks = makeCanvas(1, 1)
+  // The player's own words come first; once they've all been smashed, the built-in
+  // words for the player's language take over, then the cycle repeats.
   let customWords = initialWords
-  let customIdx = 0
-  let defaultIdx = 0
-  const word = () => (customWords.length ? customWords[customIdx % customWords.length] : DEFAULT_WORDS[defaultIdx % DEFAULT_WORDS.length])
+  let wordIdx = 0
+  const sequence = () => [...customWords, ...DEFAULT_WORDS.filter((w) => !customWords.includes(w))]
+  const word = () => {
+    const seq = sequence()
+    return seq[wordIdx % seq.length]
+  }
 
   const { stage, dispose } = setupCanvas(canvas, (s) => rebuild(true, s))
   const shake = new Shake(30, 0.04, 1.7)
@@ -307,8 +312,7 @@ export function startGame(canvas: HTMLCanvasElement, onFirst: () => void, initia
   }
 
   function newPane() {
-    if (customWords.length) customIdx++
-    else defaultIdx++
+    wordIdx++
     damage = 0
     threshold = 8 + ((Math.random() * 3) | 0)
     rebuild(true)
@@ -402,7 +406,7 @@ export function startGame(canvas: HTMLCanvasElement, onFirst: () => void, initia
     },
     setWords(words: string[]) {
       customWords = words
-      customIdx = 0
+      wordIdx = 0
       if (state === 'intact') {
         // repaint the word but keep the cracks
         const { w, h, dpr } = stage
