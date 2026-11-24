@@ -9,7 +9,8 @@ Glass Smash (暴力碎屏 (zh-CN), Rompe el Cristal (es), Casse la Vitre (fr), �
 1. The screen is a pane of tempered glass with an annoying word on it (BUG, MONDAY, DEADLINE and so on, depending on your language).
 2. Click or tap to hit it. Every hit leaves radial cracks, throws glass splinters and plays a heavy glass knock, and the screen shakes.
 3. Hit it 8 to 10 times quickly and the whole pane shatters into about 140 physics shards that fall in slow motion. A fresh pane slides in one second later.
-4. Type your own word in the box at the top: your boss, your bug, your commute.
+4. Type your own words in the box at the top, separated by commas: your boss, your bug, your commute. They are added to the page link (for example ?w=BUG,MONDAY), so when you share it your friends get the same words to smash.
+5. Tap Share to send it to friends: the system share sheet on phones, or copy link, X, Facebook, WhatsApp, Telegram, LINE, Weibo, Reddit and a QR code on computers.
 
 ## Facts
 

@@ -22,7 +22,7 @@ interface Frag {
 
 export interface GameApi {
   dispose(): void
-  setWord(w: string): void
+  setWords(words: string[]): void
 }
 
 const makeCanvas = (w: number, h: number) => {
@@ -32,12 +32,13 @@ const makeCanvas = (w: number, h: number) => {
   return c
 }
 
-export function startGame(canvas: HTMLCanvasElement, onFirst: () => void): GameApi {
+export function startGame(canvas: HTMLCanvasElement, onFirst: () => void, initialWords: string[] = []): GameApi {
   let pane = makeCanvas(1, 1)
   let cracks = makeCanvas(1, 1)
-  let customWord = ''
+  let customWords = initialWords
+  let customIdx = 0
   let defaultIdx = 0
-  const word = () => customWord || DEFAULT_WORDS[defaultIdx % DEFAULT_WORDS.length]
+  const word = () => (customWords.length ? customWords[customIdx % customWords.length] : DEFAULT_WORDS[defaultIdx % DEFAULT_WORDS.length])
 
   const { stage, dispose } = setupCanvas(canvas, (s) => rebuild(true, s))
   const shake = new Shake(30, 0.04, 1.7)
@@ -306,7 +307,8 @@ export function startGame(canvas: HTMLCanvasElement, onFirst: () => void): GameA
   }
 
   function newPane() {
-    if (!customWord) defaultIdx++
+    if (customWords.length) customIdx++
+    else defaultIdx++
     damage = 0
     threshold = 8 + ((Math.random() * 3) | 0)
     rebuild(true)
@@ -398,8 +400,9 @@ export function startGame(canvas: HTMLCanvasElement, onFirst: () => void): GameA
       dispose()
       canvas.removeEventListener('pointerdown', onDown)
     },
-    setWord(wd: string) {
-      customWord = wd.trim().slice(0, 12)
+    setWords(words: string[]) {
+      customWords = words
+      customIdx = 0
       if (state === 'intact') {
         // repaint the word but keep the cracks
         const { w, h, dpr } = stage
