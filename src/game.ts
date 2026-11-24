@@ -1,7 +1,10 @@
 import { audio } from './engine/AudioEngine'
+import { track } from './analytics'
+import { locale, smashWords, t } from './i18n'
 import { type Stage, Flash, HitStop, Particles, Shake, clamp, easeOutBack, haptic, rand, runLoop, setupCanvas } from './engine/juice'
 
-const DEFAULT_WORDS = ['BUG', '加班', '周一', 'KPI', '暴跌', 'DEADLINE', '改需求', '内卷']
+const DEFAULT_WORDS = smashWords()
+const FONT = locale === 'ja' ? 'system-ui, "Hiragino Sans", "Noto Sans CJK JP", sans-serif' : 'system-ui, "PingFang SC", "Hiragino Sans", "Noto Sans CJK SC", sans-serif'
 
 interface Frag {
   img: HTMLCanvasElement
@@ -72,10 +75,10 @@ export function startGame(canvas: HTMLCanvasElement, onFirst: () => void): GameA
     const text = word()
     c.textAlign = 'center'
     c.textBaseline = 'middle'
-    c.font = `900 100px system-ui, "PingFang SC", sans-serif`
+    c.font = `900 100px ${FONT}`
     const mw = c.measureText(text).width
     const size = Math.min(h * 0.34, ((w * 0.84) / mw) * 100)
-    c.font = `900 ${size}px system-ui, "PingFang SC", sans-serif`
+    c.font = `900 ${size}px ${FONT}`
     const tg = c.createLinearGradient(0, h / 2 - size / 2, 0, h / 2 + size / 2)
     tg.addColorStop(0, '#ff5a5f')
     tg.addColorStop(1, '#ff9f1c')
@@ -293,6 +296,7 @@ export function startGame(canvas: HTMLCanvasElement, onFirst: () => void): GameA
     brokenAt = time
     slowT = 0
     smashed++
+    track('shatter', { panes: smashed })
     stop.trigger(60)
     flash.fire(0.9, '235,245,255')
     shake.add(1)
@@ -374,7 +378,7 @@ export function startGame(canvas: HTMLCanvasElement, onFirst: () => void): GameA
       ctx.font = '600 12px ui-monospace, monospace'
       ctx.textAlign = 'left'
       ctx.fillStyle = 'rgba(255,255,255,0.4)'
-      ctx.fillText(`已砸碎 ${smashed} 块`, 36, h - 34)
+      ctx.fillText(t('smash_count', { n: smashed }), 36, h - 34)
     }
     flash.draw(ctx, w, h)
   }
