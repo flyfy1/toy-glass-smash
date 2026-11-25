@@ -1,7 +1,7 @@
 import { audio } from './engine/AudioEngine'
 import { track } from './analytics'
 import { locale, smashWords, t } from './i18n'
-import { type Stage, Flash, HitStop, Particles, Shake, clamp, easeOutBack, haptic, rand, runLoop, setupCanvas } from './engine/juice'
+import { type Stage, Flash, HitStop, Shake, clamp, easeOutBack, haptic, rand, runLoop, setupCanvas } from './engine/juice'
 
 // Dev only (frame sheets): ?seed=<n> makes every random choice repeatable.
 const QS = new URLSearchParams(location.search)
@@ -54,6 +54,9 @@ interface Sliver {
   l: number
   life: number
   max: number
+  grav: number
+  drag: number
+  slow: boolean // shatter slivers ride the slow motion
   glint: boolean // 1 in 6 flash white for a frame as they turn edge-on
   side: number
   flash: boolean
@@ -162,7 +165,6 @@ export function startGame(canvas: HTMLCanvasElement, onFirst: () => void, initia
   const shake = new Shake(30, 0.04, 1.7)
   const stop = new HitStop()
   const flash = new Flash()
-  const parts = new Particles(2500)
   let frags: Frag[] = []
 
   let state: 'intact' | 'broken' | 'sliding' = 'intact'
@@ -335,11 +337,13 @@ export function startGame(canvas: HTMLCanvasElement, onFirst: () => void, initia
     audio.tick(vol, (nx / stage.w) * 1.2 - 0.6)
   }
 
-  function splinter(x: number, y: number, n: number) {
+  /** Glass slivers. Defaults are the per-hit splinters; the shatter passes its own speed, life, gravity and drag. */
+  function splinter(x: number, y: number, n: number, o: { speed?: number; life?: number; grav?: number; drag?: number; slow?: boolean; big?: boolean } = {}) {
+    const { speed = 700, grav = 2200, drag = 0.97, slow = false, big = false } = o
     for (let i = 0; i < n; i++) {
       const a = Math.random() * Math.PI * 2
-      const sp = 700 * (0.2 + Math.random() * 0.9)
-      const life = 0.6 * (0.5 + Math.random() * 0.7)
+      const sp = speed * (0.2 + Math.random() * 0.9)
+      const life = (o.life ?? 0.6) * (0.5 + Math.random() * 0.7)
       slivers.push({
         x,
         y,
@@ -347,10 +351,13 @@ export function startGame(canvas: HTMLCanvasElement, onFirst: () => void, initia
         vy: Math.sin(a) * sp,
         rot: rand(0, Math.PI * 2),
         vr: rand(4, 14) * (Math.random() < 0.5 ? -1 : 1),
-        w: rand(2, 3),
-        l: rand(6, 10),
+        w: big ? rand(2, 3.5) : rand(2, 3),
+        l: big ? rand(7, 13) : rand(6, 10),
         life,
         max: life,
+        grav,
+        drag,
+        slow,
         glint: Math.random() < 1 / 6,
         side: 0,
         flash: false,
@@ -512,7 +519,7 @@ export function startGame(canvas: HTMLCanvasElement, onFirst: () => void, initia
     shake.add(1)
     haptic([40, 30, 120, 40, 200])
     audio.shatter()
-    parts.burst(x, y, 380, { speed: 1600, hue: () => rand(185, 215), light: 85, life: 1.6, size: 4, grav: 1800, drag: 0.975 })
+    splinter(x, y, 380, { speed: 1600, life: 1.6, grav: 1800, drag: 0.975, slow: true, big: true })
   }
 
   function makeHoldout(f: Frag, clip: Pt[]): Holdout {
@@ -660,6 +667,14 @@ export function startGame(canvas: HTMLCanvasElement, onFirst: () => void, initia
     hit(x, y)
   }
   canvas.addEventListener('pointerdown', onDown)
+  // rAF stops in a hidden tab, so nothing would decay the critical state: silence the creak (it restarts on return if still critical)
+  const onVis = () => {
+    if (document.hidden) {
+      creak?.stop()
+      creak = null
+    }
+  }
+  document.addEventListener('visibilitychange', onVis)
 
   const update = (dt: number) => {
     time += dt
@@ -710,18 +725,18 @@ export function startGame(canvas: HTMLCanvasElement, onFirst: () => void, initia
       f.rot += f.vr * sdt
     }
     frags = frags.filter((f) => f.y - 200 < stage.h)
-    parts.update(sdt)
     updateHoldout(dt)
-    const k = Math.pow(0.97, dt * 60)
     let j = 0
     for (const p of slivers) {
-      p.life -= dt
+      const d = p.slow ? sdt : dt
+      p.life -= d
       if (p.life <= 0) continue
+      const k = Math.pow(p.drag, d * 60)
       p.vx *= k
-      p.vy = p.vy * k + 2200 * dt
-      p.x += p.vx * dt
-      p.y += p.vy * dt
-      p.rot += p.vr * dt
+      p.vy = p.vy * k + p.grav * d
+      p.x += p.vx * d
+      p.y += p.vy * d
+      p.rot += p.vr * d
       const side = Math.cos(p.rot) > 0 ? 1 : -1
       p.flash = p.glint && p.side !== 0 && side !== p.side
       p.side = side
@@ -760,7 +775,6 @@ export function startGame(canvas: HTMLCanvasElement, onFirst: () => void, initia
       ctx.drawImage(ho.img, ho.ox, ho.oy, ho.w, ho.h)
       ctx.restore()
     }
-    parts.draw(ctx)
     drawSlivers(ctx)
     ctx.restore()
     if (ho) {
@@ -856,6 +870,7 @@ export function startGame(canvas: HTMLCanvasElement, onFirst: () => void, initia
       stopLoop()
       dispose()
       creak?.stop()
+      document.removeEventListener('visibilitychange', onVis)
       canvas.removeEventListener('pointerdown', onDown)
     },
     setWords(words: string[]) {
