@@ -176,15 +176,64 @@ class AudioEngine {
     this.noise({ dur: 0.025, gain: gain * 0.5, filter: 'highpass', freq: 4000 })
   }
 
-  /** Tempered-glass knock: thud + inharmonic ping + bright noise tick. */
-  glassHit(intensity = 0.5): void {
+  /** Tempered-glass knock: thud + inharmonic ping + bright noise tick. `vol` scales the whole hit. */
+  glassHit(intensity = 0.5, vol = 1): void {
     const i = Math.min(1, intensity)
-    this.tone({ freq: 120, freqEnd: 55, dur: 0.18, gain: 0.55 + 0.3 * i })
-    this.noise({ dur: 0.09 + 0.1 * i, gain: 0.35 + 0.35 * i, filter: 'highpass', freq: 2500 })
+    this.tone({ freq: 120, freqEnd: 55, dur: 0.18, gain: (0.55 + 0.3 * i) * vol })
+    this.noise({ dur: 0.09 + 0.1 * i, gain: (0.35 + 0.35 * i) * vol, filter: 'highpass', freq: 2500 })
     const base = 1800 + Math.random() * 1400
     ;[1, 1.73, 2.61, 3.9].forEach((m, k) =>
-      this.tone({ freq: base * m, type: 'sine', dur: 0.25 + 0.4 * i - k * 0.05, gain: 0.08 / (k + 1) + 0.05 * i, pan: Math.random() - 0.5 }),
+      this.tone({ freq: base * m, type: 'sine', dur: 0.25 + 0.4 * i - k * 0.05, gain: (0.08 / (k + 1) + 0.05 * i) * vol, pan: Math.random() - 0.5 }),
     )
+  }
+
+  /** Stressed glass: one dry tick as a crack creeps. `vol` 1 = the full recipe (0.05 sine, 0.04 noise). */
+  tick(vol = 1, pan = 0): void {
+    this.tone({ freq: 3200 + Math.random() * 1300, type: 'sine', dur: 0.012, gain: 0.05 * vol, attack: 0.001, pan })
+    this.noise({ dur: 0.008, gain: 0.04 * vol, filter: 'highpass', freq: 5000, attack: 0.001 })
+  }
+
+  /** A small piece of glass breaking on the floor: five high pings over 120 ms. */
+  tinkle(pan = 0): void {
+    for (let k = 0; k < 5; k++)
+      this.tone({ freq: 3000 + Math.random() * 4000, type: 'sine', dur: 0.06 + Math.random() * 0.09, gain: 0.05, delay: Math.random() * 0.12, pan: pan + (Math.random() - 0.5) * 0.4 })
+  }
+
+  /** Continuous low creak of a pane about to go: 55 Hz saw through a narrow 400 Hz band, pitch wobbling ±6 % at 7 Hz. */
+  creak(): { stop(): void } {
+    if (!this.ok) return { stop() {} }
+    const ctx = this.ctx!
+    const t0 = ctx.currentTime
+    const osc = ctx.createOscillator()
+    osc.type = 'sawtooth'
+    osc.frequency.value = 55
+    const lfo = ctx.createOscillator()
+    lfo.frequency.value = 7
+    const depth = ctx.createGain()
+    depth.gain.value = 55 * 0.06
+    lfo.connect(depth).connect(osc.frequency)
+    const bp = ctx.createBiquadFilter()
+    bp.type = 'bandpass'
+    bp.frequency.value = 400
+    bp.Q.value = 8
+    const g = ctx.createGain()
+    g.gain.setValueAtTime(0.0001, t0)
+    g.gain.exponentialRampToValueAtTime(0.04, t0 + 0.12)
+    osc.connect(bp).connect(g).connect(this.master!)
+    osc.start(t0)
+    lfo.start(t0)
+    let stopped = false
+    return {
+      stop() {
+        if (stopped) return
+        stopped = true
+        const t = ctx.currentTime
+        g.gain.cancelScheduledValues(t)
+        g.gain.setTargetAtTime(0.0001, t, 0.004)
+        osc.stop(t + 0.05)
+        lfo.stop(t + 0.05)
+      },
+    }
   }
 
   /** Full shatter: crash + a rain of tinkles over ~1.4 s. */
