@@ -2,6 +2,8 @@
 // The text every toy shares (names for the More menu, Share, About) lives in i18n.ts.
 
 const en = {
+  smash_tag: "Someone left you this. Smash it.",
+  smash_reply_ph: "Their least favourite word",
   desc_smash: "A pane of tempered glass with the word you hate on it. Smash it. Ten fast hits and it bursts into slow-motion shards. A tiny stress-relief toy, no sign-up.",
   hint_smash: "Tap to smash · hit fast to shatter it all",
   smash_placeholder: "✎ Annoying words, comma-separated",
@@ -14,6 +16,8 @@ const en = {
 }
 
 const zhCN: typeof en = {
+  smash_tag: "有人留了块玻璃给你。砸。",
+  smash_reply_ph: "写上 TA 最烦的词",
   desc_smash: "一块钢化玻璃，上面写着让你烦的词：BUG、加班、暴跌……砸它。连击十下整块炸成碎片慢动作飘落。打开即玩的解压小玩具。",
   hint_smash: "点击砸玻璃 · 连砸十下整块粉碎",
   smash_placeholder: "✎ 烦人的词，用逗号分隔",
@@ -26,6 +30,8 @@ const zhCN: typeof en = {
 }
 
 const es: typeof en = {
+  smash_tag: "Alguien te ha dejado esto. Rómpelo.",
+  smash_reply_ph: "Su palabra más odiada",
   desc_smash: "Un cristal templado con la palabra que odias. Rómpelo. Diez golpes rápidos y estalla en pedazos a cámara lenta. Un juguete antiestrés, sin registro.",
   hint_smash: "Toca para golpear · golpea rápido para romperlo todo",
   smash_placeholder: "✎ Lo que te molesta (con comas)",
@@ -38,6 +44,8 @@ const es: typeof en = {
 }
 
 const fr: typeof en = {
+  smash_tag: "Quelqu’un vous a laissé ça. Cassez-la.",
+  smash_reply_ph: "Son mot le plus détesté",
   desc_smash: "Une vitre trempée avec le mot que tu détestes. Casse-la. Dix coups rapides et elle vole en éclats au ralenti. Un petit jouet anti-stress, sans inscription.",
   hint_smash: "Touche pour frapper · frappe vite pour tout briser",
   smash_placeholder: "✎ Ce qui t’énerve (virgules)",
@@ -50,6 +58,8 @@ const fr: typeof en = {
 }
 
 const ja: typeof en = {
+  smash_tag: "あなた宛てのガラスです。割ってどうぞ。",
+  smash_reply_ph: "相手がいちばん嫌いな言葉",
   desc_smash: "ムカつく言葉が書かれた強化ガラス。叩き割ろう。素早く 10 連打でスローモーションで粉々に。登録不要のストレス解消おもちゃ。",
   hint_smash: "タップで叩く · 連打でガラスを粉々に",
   smash_placeholder: "✎ ムカつく言葉（カンマ区切り）",

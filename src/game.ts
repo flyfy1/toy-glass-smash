@@ -22,6 +22,8 @@ const FONT = locale === 'ja' ? 'system-ui, "Hiragino Sans", "Noto Sans CJK JP", 
 
 interface Frag {
   img: HTMLCanvasElement
+  /** the same piece without the word, for a recipient's card (never shown on screen) */
+  blank?: HTMLCanvasElement
   ox: number // image offset relative to centroid
   oy: number
   w: number
@@ -148,7 +150,11 @@ const makeCanvas = (w: number, h: number) => {
   return c
 }
 
-export function startGame(canvas: HTMLCanvasElement, onFirst: () => void, initialWords: string[] = []): GameApi {
+/**
+ * `onPeak` gets a picture of the shards in the air, a moment after each shatter. Words in `hide` (a
+ * sender's words, on a recipient's screen) are left off that picture; the screen shows them as usual.
+ */
+export function startGame(canvas: HTMLCanvasElement, onFirst: () => void, initialWords: string[] = [], onPeak?: (snap: HTMLCanvasElement) => void, hide: string[] = []): GameApi {
   let pane = makeCanvas(1, 1)
   let cracks = makeCanvas(1, 1)
   // The player's own words come first; once they've all been smashed, the built-in
@@ -178,6 +184,8 @@ export function startGame(canvas: HTMLCanvasElement, onFirst: () => void, initia
   let started = false
   let time = 0
   let slowT = 1 // 0..1, ramps back to normal speed after a shatter
+  let snapAt = 0 // when to take the card's picture (shards in the air, in slow motion)
+  let snapBlank = false
   let rays: Ray[] = [] // every main ray on the current pane
   let creeps: { at: number; ray: Ray; len: number; vol: number }[] = []
   let slivers: Sliver[] = []
@@ -197,7 +205,7 @@ export function startGame(canvas: HTMLCanvasElement, onFirst: () => void, initia
     if (clearCracks || cracks.width !== pane.width || cracks.height !== pane.height) cracks = makeCanvas(w * dpr, h * dpr)
   }
 
-  function drawPane(c: CanvasRenderingContext2D, w: number, h: number, dpr: number) {
+  function drawPane(c: CanvasRenderingContext2D, w: number, h: number, dpr: number, text = word()) {
     c.setTransform(dpr, 0, 0, dpr, 0, 0)
     const bg = c.createLinearGradient(0, 0, w, h)
     bg.addColorStop(0, '#1b2740')
@@ -205,7 +213,6 @@ export function startGame(canvas: HTMLCanvasElement, onFirst: () => void, initia
     c.fillStyle = bg
     c.fillRect(0, 0, w, h)
     // the annoying word
-    const text = word()
     c.textAlign = 'center'
     c.textBaseline = 'middle'
     c.font = `900 100px ${FONT}`
@@ -411,6 +418,34 @@ export function startGame(canvas: HTMLCanvasElement, onFirst: () => void, initia
     const sc = snap.getContext('2d')!
     sc.drawImage(pane, 0, 0)
     sc.drawImage(cracks, 0, 0)
+    // a sender's word on a recipient's screen: the card's picture gets the pieces without it
+    let blank: HTMLCanvasElement | null = null
+    if (hide.includes(word())) {
+      const keep = wordRect
+      blank = makeCanvas(w * dpr, h * dpr)
+      const bc = blank.getContext('2d')!
+      drawPane(bc, w, h, dpr, '')
+      bc.setTransform(1, 0, 0, 1, 0, 0)
+      bc.drawImage(cracks, 0, 0)
+      wordRect = keep
+    }
+    const cut = (src: HTMLCanvasElement, poly: [number, number][], minX: number, minY: number, fw: number, fh: number) => {
+      const img = makeCanvas(fw * dpr, fh * dpr)
+      const c = img.getContext('2d')!
+      c.setTransform(dpr, 0, 0, dpr, -minX * dpr, -minY * dpr)
+      c.beginPath()
+      poly.forEach(([px, py], i) => (i ? c.lineTo(px, py) : c.moveTo(px, py)))
+      c.closePath()
+      c.save()
+      c.clip()
+      c.setTransform(1, 0, 0, 1, 0, 0)
+      c.drawImage(src, -minX * dpr, -minY * dpr)
+      c.restore()
+      c.strokeStyle = 'rgba(220,245,255,0.7)'
+      c.lineWidth = 1.2
+      c.stroke()
+      return img
+    }
 
     // polar cell grid around the impact
     const D = Math.max(Math.hypot(x, y), Math.hypot(w - x, y), Math.hypot(x, h - y), Math.hypot(w - x, h - y)) * 1.08
@@ -455,20 +490,7 @@ export function startGame(canvas: HTMLCanvasElement, onFirst: () => void, initia
         const fw = maxX - minX
         const fh = maxY - minY
         if (fw < 1 || fh < 1) continue
-        const img = makeCanvas(fw * dpr, fh * dpr)
-        const c = img.getContext('2d')!
-        c.setTransform(dpr, 0, 0, dpr, -minX * dpr, -minY * dpr)
-        c.beginPath()
-        poly.forEach(([px, py], i) => (i ? c.lineTo(px, py) : c.moveTo(px, py)))
-        c.closePath()
-        c.save()
-        c.clip()
-        c.setTransform(1, 0, 0, 1, 0, 0)
-        c.drawImage(snap, -minX * dpr, -minY * dpr)
-        c.restore()
-        c.strokeStyle = 'rgba(220,245,255,0.7)'
-        c.lineWidth = 1.2
-        c.stroke()
+        const img = cut(snap, poly, minX, minY, fw, fh)
         const dx = cx - x
         const dy = cy - y
         const dist = Math.hypot(dx, dy) + 1
@@ -484,6 +506,7 @@ export function startGame(canvas: HTMLCanvasElement, onFirst: () => void, initia
         }
         frags.push({
           img,
+          blank: blank ? cut(blank, poly, minX, minY, fw, fh) : undefined,
           ox: minX - cx,
           oy: minY - cy,
           w: fw,
@@ -516,6 +539,7 @@ export function startGame(canvas: HTMLCanvasElement, onFirst: () => void, initia
     }
     stats.n = (stats.n ?? 0) + 1 // panes smashed this visit: the share line switches to the done form
     track('shatter', { panes: smashed })
+    snapAt = onPeak ? time + 0.2 : 0
     stop.trigger(60)
     flash.fire(0.9, '235,245,255')
     shake.add(1)
@@ -766,7 +790,7 @@ export function startGame(canvas: HTMLCanvasElement, onFirst: () => void, initia
       ctx.save()
       ctx.translate(f.x, f.y)
       ctx.rotate(f.rot)
-      ctx.drawImage(f.img, f.ox, f.oy, f.w, f.h)
+      ctx.drawImage((snapBlank && f.blank) || f.img, f.ox, f.oy, f.w, f.h)
       ctx.restore()
     }
     const ho = holdout
@@ -828,10 +852,26 @@ export function startGame(canvas: HTMLCanvasElement, onFirst: () => void, initia
     shake.update(dt)
     flash.update(dt)
   }
+  /** The card's picture: this frame (the word left off if it is a sender's), then the frame as shown. */
+  function peakSnap(now: number) {
+    snapAt = 0
+    const blank = frags.some((f) => f.blank)
+    if (blank) {
+      snapBlank = true
+      draw(now)
+      snapBlank = false
+    }
+    const k = Math.min(1, 1000 / canvas.width)
+    const out = makeCanvas(canvas.width * k, canvas.height * k)
+    out.getContext('2d')!.drawImage(canvas, 0, 0, out.width, out.height)
+    if (blank) draw(now)
+    onPeak?.(out)
+  }
   const stopLoop = runLoop((dt, now) => {
     if (frozen) return
     if (!stop.active) step(dt)
     draw(now)
+    if (snapAt && time >= snapAt) peakSnap(now)
   })
 
   if (import.meta.env.DEV) {
