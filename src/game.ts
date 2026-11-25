@@ -1,6 +1,7 @@
 import { audio } from './engine/AudioEngine'
 import { track } from './analytics'
-import { locale, smashWords, t } from './i18n'
+import { list, locale, t } from './i18n'
+import { stats } from './share'
 import { type Stage, Flash, HitStop, Shake, clamp, easeOutBack, haptic, rand, runLoop, setupCanvas } from './engine/juice'
 
 // Dev only (frame sheets): ?seed=<n> makes every random choice repeatable.
@@ -16,7 +17,7 @@ if (import.meta.env.DEV && QS.has('seed')) {
   }
 }
 
-const DEFAULT_WORDS = smashWords()
+const DEFAULT_WORDS = list('smash_words')
 const FONT = locale === 'ja' ? 'system-ui, "Hiragino Sans", "Noto Sans CJK JP", sans-serif' : 'system-ui, "PingFang SC", "Hiragino Sans", "Noto Sans CJK SC", sans-serif'
 
 interface Frag {
@@ -513,6 +514,7 @@ export function startGame(canvas: HTMLCanvasElement, onFirst: () => void, initia
       holdout = makeHoldout(pick.f, pick.clip)
       holdoutDue = false
     }
+    stats.n = (stats.n ?? 0) + 1 // panes smashed this visit: the share line switches to the done form
     track('shatter', { panes: smashed })
     stop.trigger(60)
     flash.fire(0.9, '235,245,255')

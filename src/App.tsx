@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { MoreMenu } from './components/MoreMenu'
 import { applyMeta, t } from './i18n'
 import { startAnalytics, track } from './analytics'
-import { parseWords, stats, syncWordsToUrl, wordsFromUrl } from './share'
+import { parseWords, stats, syncWordsToUrl, trackLanding, wordsFromUrl } from './share'
 import { Hint } from './components/Hint'
 import { startGame, type GameApi } from './game'
 
@@ -18,7 +18,7 @@ export default function App() {
     applyMeta('smash')
     startAnalytics('smash')
     stats.words = initial
-    if (initial.length) track('shared_words_open', { words: initial.length })
+    trackLanding({ words: initial.length })
     const g = startGame(
       ref.current!,
       () => {
