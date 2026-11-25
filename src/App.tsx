@@ -33,9 +33,9 @@ export default function App() {
       },
       initial,
       (snap) => {
-        // a card at the 1st, 5th, 20th and 50th pane (drawing one is not free); in between the numbers keep up
+        // a card (with a picture) at the 1st, 5th, 20th and 50th pane; in between the numbers keep up
         const peak = { snap, data: { panes: stats.n ?? 0 } }
-        if ([1, 5, 20, 50].includes(stats.n ?? 0)) sharePeak('smash', peak)
+        if (snap) sharePeak('smash', peak)
         else store.peak = peak
       },
       landing.recipient ? initial : [],

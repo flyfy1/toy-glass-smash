@@ -154,7 +154,9 @@ const makeCanvas = (w: number, h: number) => {
  * `onPeak` gets a picture of the shards in the air, a moment after each shatter. Words in `hide` (a
  * sender's words, on a recipient's screen) are left off that picture; the screen shows them as usual.
  */
-export function startGame(canvas: HTMLCanvasElement, onFirst: () => void, initialWords: string[] = [], onPeak?: (snap: HTMLCanvasElement) => void, hide: string[] = []): GameApi {
+const PEAKS = [1, 5, 20, 50]
+
+export function startGame(canvas: HTMLCanvasElement, onFirst: () => void, initialWords: string[] = [], onPeak?: (snap: HTMLCanvasElement | null) => void, hide: string[] = []): GameApi {
   let pane = makeCanvas(1, 1)
   let cracks = makeCanvas(1, 1)
   // The player's own words come first; once they've all been smashed, the built-in
@@ -539,7 +541,9 @@ export function startGame(canvas: HTMLCanvasElement, onFirst: () => void, initia
     }
     stats.n = (stats.n ?? 0) + 1 // panes smashed this visit: the share line switches to the done form
     track('shatter', { panes: smashed })
-    snapAt = onPeak ? time + 0.2 : 0
+    // a picture only where a card is drawn (panes 1, 5, 20, 50); the others just pass the count on
+    if (PEAKS.includes(smashed)) snapAt = time + 0.2
+    else onPeak?.(null)
     stop.trigger(60)
     flash.fire(0.9, '235,245,255')
     shake.add(1)
