@@ -141,6 +141,8 @@ function nearPoly(poly: Pt[], x: number, y: number, pad: number) {
 export interface GameApi {
   dispose(): void
   setWords(words: string[]): void
+  /** a portal visit: the first pane carries this word (not the player's words, not the URL) */
+  seed(word: string): void
 }
 
 const makeCanvas = (w: number, h: number) => {
@@ -164,7 +166,9 @@ export function startGame(canvas: HTMLCanvasElement, onFirst: () => void, initia
   let customWords = initialWords
   let wordIdx = 0
   const sequence = () => [...customWords, ...DEFAULT_WORDS.filter((w) => !customWords.includes(w))]
+  let seeded = ''
   const word = () => {
+    if (seeded) return seeded
     const seq = sequence()
     return seq[wordIdx % seq.length]
   }
@@ -666,7 +670,8 @@ export function startGame(canvas: HTMLCanvasElement, onFirst: () => void, initia
     if (low >= stage.h) dropHoldout(ho.fall.tapped)
   }
   function newPane() {
-    wordIdx++
+    if (seeded) seeded = ''
+    else wordIdx++
     damage = 0
     rays = []
     creeps = []
@@ -924,8 +929,15 @@ export function startGame(canvas: HTMLCanvasElement, onFirst: () => void, initia
       document.removeEventListener('visibilitychange', onVis)
       canvas.removeEventListener('pointerdown', onDown)
     },
+    seed(w: string) {
+      if (state !== 'intact' || wordIdx || customWords.length) return
+      seeded = w
+      const { w: sw, h, dpr } = stage
+      drawPane(pane.getContext('2d')!, sw, h, dpr)
+    },
     setWords(words: string[]) {
       customWords = words
+      seeded = ''
       wordIdx = 0
       if (state === 'intact') {
         // repaint the word but keep the cracks

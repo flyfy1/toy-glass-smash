@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { MoreMenu } from './components/MoreMenu'
 import { applyMeta, t } from './i18n'
 import { startAnalytics, track } from './analytics'
-import { landing, live, openSheet, parseWords, sharePeak, stats, store, syncWordsToUrl, trackLanding, wordsFromUrl } from './share'
+import { arrive, landing, live, openSheet, parseWords, sharePeak, stats, store, syncWordsToUrl, trackLanding, wordsFromUrl } from './share'
 import { Tag } from './components/Tag'
 import { Hint } from './components/Hint'
 import { startGame, type GameApi } from './game'
@@ -41,6 +41,8 @@ export default function App() {
       landing.recipient ? initial : [],
     )
     api.current = g
+    // a portal visit (yoink's bowl, purr's glass, pop's sticker, scratch's glass): the tag, and a fixed word on the first pane
+    arrive('smash', ['top-16', 'bg-[#F4F1EA] text-[#B3261E] font-semibold']).then((a) => a?.word && g.seed(a.word))
     return () => g.dispose()
   }, [initial])
   const onText = (value: string) => {
