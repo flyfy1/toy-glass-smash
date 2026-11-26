@@ -1,5 +1,5 @@
 import { audio } from './engine/AudioEngine'
-import { track } from './analytics'
+import { act, track } from './analytics'
 import { list, locale, t } from './i18n'
 import { stats } from './share'
 import { type Stage, Flash, HitStop, Shake, clamp, easeOutBack, haptic, rand, runLoop, setupCanvas } from './engine/juice'
@@ -389,6 +389,7 @@ export function startGame(canvas: HTMLCanvasElement, onFirst: () => void, initia
   }
 
   function hit(x: number, y: number) {
+    act('hit')
     damage++
     lastHit = time
     const p = clamp(damage / threshold, 0, 1)
@@ -526,6 +527,7 @@ export function startGame(canvas: HTMLCanvasElement, onFirst: () => void, initia
     brokenAt = time
     slowT = 0
     smashed++
+    act('pane')
     // pane 3 of a session always has a holdout (or the next pane that can), then one random pane in each block of 4
     if (smashed >= 4 && (smashed - 4) % 4 === 0) holdoutPane = smashed + ((Math.random() * 4) | 0)
     if (smashed === 3 || smashed === holdoutPane) holdoutDue = true
@@ -691,7 +693,10 @@ export function startGame(canvas: HTMLCanvasElement, onFirst: () => void, initia
       const s = Math.sin(-ho.rot)
       const dx = x - ho.px
       const dy = y - ho.py
-      if (nearPoly(ho.poly, dx * c - dy * s, dx * s + dy * c, 12)) return knockHoldout(true)
+      if (nearPoly(ho.poly, dx * c - dy * s, dx * s + dy * c, 12)) {
+        act('holdout')
+        return knockHoldout(true)
+      }
     }
     if (state !== 'intact') return
     hit(x, y)
