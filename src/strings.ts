@@ -2,6 +2,7 @@
 // The text every toy shares (names for the More menu, Share, About) lives in i18n.ts.
 
 const en = {
+  name_smash: "Glass Smash",
   smash_tag: "Someone left you this. Smash it.",
   smash_reply_ph: "Their least favourite word",
   desc_smash: "A pane of tempered glass with the word you hate on it. Smash it. Ten fast hits and it bursts into slow-motion shards. A tiny stress-relief toy, no sign-up.",
@@ -16,6 +17,7 @@ const en = {
 }
 
 const zhCN: typeof en = {
+  name_smash: "暴力碎屏",
   smash_tag: "有人留了块玻璃给你。砸。",
   smash_reply_ph: "写上 TA 最烦的词",
   desc_smash: "一块钢化玻璃，上面写着让你烦的词：BUG、加班、暴跌……砸它。连击十下整块炸成碎片慢动作飘落。打开即玩的解压小玩具。",
@@ -30,6 +32,7 @@ const zhCN: typeof en = {
 }
 
 const es: typeof en = {
+  name_smash: "Rompe el Cristal",
   smash_tag: "Alguien te ha dejado esto. Rómpelo.",
   smash_reply_ph: "Su palabra más odiada",
   desc_smash: "Un cristal templado con la palabra que odias. Rómpelo. Diez golpes rápidos y estalla en pedazos a cámara lenta. Un juguete antiestrés, sin registro.",
@@ -44,6 +47,7 @@ const es: typeof en = {
 }
 
 const fr: typeof en = {
+  name_smash: "Casse la Vitre",
   smash_tag: "Quelqu’un vous a laissé ça. Cassez-la.",
   smash_reply_ph: "Son mot le plus détesté",
   desc_smash: "Une vitre trempée avec le mot que tu détestes. Casse-la. Dix coups rapides et elle vole en éclats au ralenti. Un petit jouet anti-stress, sans inscription.",
@@ -58,6 +62,7 @@ const fr: typeof en = {
 }
 
 const ja: typeof en = {
+  name_smash: "ガラス粉砕",
   smash_tag: "あなた宛てのガラスです。割ってどうぞ。",
   smash_reply_ph: "相手がいちばん嫌いな言葉",
   desc_smash: "ムカつく言葉が書かれた強化ガラス。叩き割ろう。素早く 10 連打でスローモーションで粉々に。登録不要のストレス解消おもちゃ。",
